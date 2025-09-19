@@ -68,8 +68,6 @@ def run() -> ResponseReturnValue:
     elif runner == "mypy":
         with tempfile.NamedTemporaryFile("w+") as f:
             _ = f.write(code)
-            print(f)
-            print(f.name)
             f.flush()
             process = subprocess.run(
                 ["uvx", "mypy", str(f.name)],
@@ -79,7 +77,7 @@ def run() -> ResponseReturnValue:
             )
     else:
         process = subprocess.run(
-            nsjail(["/usr/bin/env", "uv", "run", "--isolated", "--python", runner, "--script", "-"]),
+            nsjail(["/usr/bin/env", "uv", "run", "--python", runner, "--script", "-"]),
             capture_output=True,
             input=code,
             text=True,

@@ -67,17 +67,12 @@ editor.setOptions({
 editor.setFontSize(18);
 editor.setValue(`# /// script
 # dependencies = [
-#   "requests<3",
-#   "rich",
 # ]
 # ///
 
-import requests
-from rich.pretty import pprint
-
-resp = requests.get("https://peps.python.org/api/peps.json")
-data = resp.json()
-pprint([(k, v["title"]) for k, v in data.items()][:10])
+import os, sys
+print(sys.version)
+print(os.listdir("/"))
 `);
 
 const Vim = ace.require("ace/keyboard/vim").CodeMirror.Vim;
