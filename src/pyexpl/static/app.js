@@ -85,12 +85,13 @@ let mapping = {
 	"python3-9": "python3.9",
 	"python3-8": "python3.8",
 };
-Vim.defineEx("write", "w", function (cm, input) {
+
+// send the editor content to the server for all registered runners
+// and update the runner output accordingly.
+function run() {
 	for (idx in runners) {
 		let runner = runners[idx];
 		let output = document.getElementById(`output-${runner}`);
-		console.log(`output-${runner}`);
-		// execute code
 		let code = editor.getValue();
 		const formData = new FormData();
 		formData.append("code", code);
@@ -111,10 +112,14 @@ Vim.defineEx("write", "w", function (cm, input) {
 			})
 			.catch((e) => {
 				console.error(e);
-				output.innerHTML = `failed. ${e}`;
-				alert(
+				output.innerHTML = `failed (check dev console for details). ${e}`;
+				console.log(
 					`An error occured while running code via the runner ${runner}. Check the console for the error`,
 				);
 			});
 	}
+}
+Vim.defineEx("write", "w", function (cm, input) {
+	run();
 });
+document.getElementById('save-btn').addEventListener('click', run);
