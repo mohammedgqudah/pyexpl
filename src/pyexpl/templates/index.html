@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+
+<head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.0/split.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.43.3/ace.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.43.3/keybinding-vim.min.js"></script>
+
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+	<div class="split">
+		<div id="split-0">
+			<nav class="actions-bar">
+				<!-- save -->
+				<button title="Save" id="save-btn">
+					<svg width="22px" height="22px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path
+							d="M4 13V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V16M4 8V6C4 4.89543 4.89543 4 6 4H14.1716C14.702 4 15.2107 4.21071 15.5858 4.58579L19.4142 8.41421C19.7893 8.78929 20 9.29799 20 9.82843V12M15 20V15H9V20"
+							stroke="#1C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</button>
+				<button class="add-runner" data-runner="python3.13">3.13</button>
+				<button class="add-runner" data-runner="python3.12">3.12</button>
+				<button class="add-runner" data-runner="python3.11">3.11</button>
+				<button class="add-runner" data-runner="python3.10">3.10</button>
+				<button class="add-runner" data-runner="python3.9">3.9</button>
+				<button class="add-runner" data-runner="python3.8">3.8</button>
+				<button class="add-runner" data-runner="ruff-check">ruff</button>
+				<button class="add-runner" data-runner="ruff-format">ruff fmt</button>
+				<button class="add-runner" data-runner="mypy">mypy</button>
+			</nav>
+			<div id="editor"></div>
+		</div>
+		<div id="output-split-container">
+			<div id="output-python3-13" class="output" data-runner="python3.13"></div>
+		</div>
+	</div>
+
+	<script src="/static/app.js">
+	</script>
+	<style>
+		body {
+			padding: 0;
+			margin: 0;
+			height: 100vh;
+			font-family: monospace;
+			font-family: "Inconsolata", monospace;
+			box-sizing: border-box;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+
+		.output {
+			padding: 2px;
+			overflow: scroll;
+			position: relative;
+			padding-top: 28px;
+
+			&::before {
+				content: attr(data-runner);
+				position: absolute;
+				top: 5px;
+				left: 5px;
+				background: rgba(0, 0, 0, 0.7);
+				color: #fff;
+				font-size: 12px;
+				padding: 3px 6px;
+				border-radius: 4px;
+				pointer-events: none;
+			}
+		}
+
+		#editor {
+			height: 100%;
+		}
+
+		/* splits */
+		.split {
+			display: flex;
+			flex-direction: row;
+			height: 100%;
+			max-height: 100vh;
+		}
+
+		#split-0 {
+			position: relative;
+		}
+
+		#output-split-container,
+		#split-0 {
+			max-height: 100%;
+			overflow: auto;
+		}
+
+		.gutter {
+			background-color: #eee;
+			background-repeat: no-repeat;
+			background-position: 50%;
+		}
+
+		.gutter.gutter-horizontal {
+			background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==");
+			cursor: col-resize;
+		}
+
+		.gutter.gutter-vertical {
+			background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=");
+			cursor: row-resize;
+		}
+
+		/* nav */
+		.actions-bar {
+			position: absolute;
+			left: 50%;
+			bottom: 20px;
+			transform: translateX(-50%);
+			height: 50px;
+			border-radius: 2px;
+			z-index: 2;
+			display: flex;
+			align-items: center;
+			justify-content: space-around;
+			gap: 10px;
+			padding: 0px 10px;
+			box-shadow: rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px;
+
+			button {
+				font-weight: bold;
+				background: none;
+				border: none;
+				border-radius: 2px;
+				height: 70%;
+				box-shadow: rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px;
+				min-width: 50px;
+				padding: 0px 5px;
+
+				&:hover {
+					background-color: rgba(27, 31, 35, 0.15);
+					cursor: pointer;
+				}
+
+				&:active {
+					transform: translateY(1px);
+				}
+
+				svg {}
+			}
+		}
+	</style>
+</body>
+
+</html>
