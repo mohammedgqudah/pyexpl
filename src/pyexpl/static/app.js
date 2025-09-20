@@ -107,7 +107,7 @@ function run() {
 				let pre = document.createElement("pre")
 				output.innerText = r.stdout;
 				if (r.exit_code != 0) {
-					output.innerText += r.stderr;
+					//output.innerText += r.stderr;
 				}
 			})
 			.catch((e) => {

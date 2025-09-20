@@ -2,14 +2,14 @@ import typing
 from abc import ABC, abstractmethod
 import subprocess
 import tempfile
+import pathlib
 
 def nsjail(cmd: list[str]):
     """Build an nsjail command list with the given arguments."""
     return [
         "nsjail",
-        "--quiet",
         "-C",
-        "nsjail.cfg",
+        "/app/nsjail.cfg",
         "--",
         *cmd
     ]
@@ -26,13 +26,7 @@ class Runner(ABC):
 
 class PythonRunner(Runner):
     """
-    Run code via a specific python version using `uv --python`.
-
-    The python version must be installed on the host because the `uv` cache inside
-    the jail is a read-only mount, so `uv` will be unable to install python versions on-demand.
-    
-    This will attempt to run the program as a PEP 723 script (inline metadata), which means
-    if internet is enabled inside the jail you can install dependencies.
+    Run code via a specific python version.
     """
     version: str
 
@@ -41,7 +35,7 @@ class PythonRunner(Runner):
 
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
         process = subprocess.run(
-            nsjail(["/usr/bin/env", "uv", "run", "--python", f"python{self.version}", "--script", "-"]),
+            nsjail(["/usr/bin/env", f"python{self.version}", "-c", input]),
             capture_output=True,
             input=input,
             text=True,
@@ -86,6 +80,48 @@ class RuffFormatRunner(Runner):
         )
         return RunResult(0, stdout=process.stdout, stderr=process.stderr)
 
+class PyRightRunner(Runner):
+    def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
+        with tempfile.NamedTemporaryFile("w+") as f:
+            _ = f.write(input)
+            f.flush()
+            process = subprocess.run(
+                ["uvx", "pyright", f.name],
+                capture_output=True,
+                input=input,
+                text=True,
+            )
+        return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+
+class PyTypeRunner(Runner):
+    def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
+        with tempfile.NamedTemporaryFile("w+", suffix=".py") as f:
+            _ = f.write(input)
+            f.flush()
+            process = subprocess.run(
+                ["uvx", "--python", "python3.11", "pytype", f.name],
+                capture_output=True,
+                input=input,
+                text=True,
+                cwd="/"
+            )
+        return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+
+class PyreRunner(Runner):
+    def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
+        tmpdir = tempfile.mkdtemp()
+        with tempfile.NamedTemporaryFile("w+", dir=tmpdir, suffix=".py") as f:
+            _ = f.write(input)
+            f.flush()
+            process = subprocess.run(
+                ["uvx", "--from", "pyre-check", "pyre", "--source-directory", pathlib.Path(f.name).parent],
+                capture_output=True,
+                input=input,
+                text=True,
+                cwd="/"
+            )
+        return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+
 RUNNERS: dict[str, Runner] = {
     "python3.14": PythonRunner("3.14"),
     "python3.13": PythonRunner("3.13"),
@@ -97,4 +133,7 @@ RUNNERS: dict[str, Runner] = {
     "mypy": MyPyRunner(),
     "ruff-format": RuffFormatRunner(),
     "ruff-check": RuffCheckRunner(),
+    "pyright": PyRightRunner(),
+    "pytype": PyTypeRunner(),
+    "pyre": PyreRunner(),
 }

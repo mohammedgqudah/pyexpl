@@ -1,0 +1,10 @@
+rootfs.tar
+Dockerfile
+Makefile
+temp/
+.venv
+.mypy_cache
+.pyre
+.ruff_cache
+.git
+.pytype
