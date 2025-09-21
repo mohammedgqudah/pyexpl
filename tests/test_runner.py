@@ -68,7 +68,6 @@ print("version:", sys.version)
     assert 200 == response.status_code
     assert f"version: {version}" in data["stdout"]
     assert 0 == data["exit_code"]
-    assert data["stderr"] == ""
 
 
 def test_syntax_error(client: FlaskClient):
@@ -84,8 +83,7 @@ print("hello
 
     data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
     assert 200 == response.status_code
-    assert "SyntaxError: unterminated string literal" in data["stderr"]
-    assert data["stdout"] == ""
+    assert "SyntaxError: unterminated string literal" in data["stdout"]
     assert data["exit_code"] != 0
 
 
@@ -103,6 +101,74 @@ print("printing to stderr", file=sys.stderr)
 
     data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
     assert 200 == response.status_code
-    assert "printing to stderr" in data["stderr"]
-    assert data["stdout"] == ""
+    assert "printing to stderr" in data["stdout"]
+    assert data["exit_code"] == 0
+
+
+def test_stdout_max_limit(client: FlaskClient):
+    response = client.post(
+        "/run",
+        data={
+            "code": """
+while True:
+    print("1" * 200, end="", flush=True)
+        """.strip(),
+            "runner": "python3.13",
+        },
+    )
+
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    assert 200 == response.status_code
+    assert data["stdout"] == ("1" * 1000) + "\n[Output truncated]"
+    assert data["exit_code"] == 143
+
+
+def test_ruff_check(client: FlaskClient):
+    expected_output = """E401 [*] Multiple imports on one line
+ --> -:1:1
+  |
+1 | import os, sys
+  | ^^^^^^^^^^^^^^
+2 | print(sys.version)
+3 | print(os.listdir("/"))
+  |
+help: Split imports
+
+Found 1 error.
+[*] 1 fixable with the `--fix` option.
+"""
+
+    response = client.post(
+        "/run",
+        data={
+            "code": """
+import os, sys
+print(sys.version)
+print(os.listdir("/"))
+""".strip(),
+            "runner": "ruff-check",
+        },
+    )
+
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    assert 200 == response.status_code
+    assert data["stdout"] == expected_output
+    assert data["exit_code"] == 0
+
+
+def test_ruff_format(client: FlaskClient):
+    expected_output = "print(1 + 1)\n"
+    response = client.post(
+        "/run",
+        data={
+            "code": """
+print  (  1    +  1)
+""".strip(),
+            "runner": "ruff-format",
+        },
+    )
+
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    assert 200 == response.status_code
+    assert data["stdout"] == expected_output
     assert data["exit_code"] == 0

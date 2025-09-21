@@ -41,6 +41,12 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 	&& uv python install python3.9.23 --install-dir /pyexplroot/home/pythons --no-bin \
 	&& uv python install python3.8.20 --install-dir /pyexplroot/home/pythons --no-bin
 
+# install ruff
+RUN --mount=type=cache,target=/root/.cache/uv \
+	UV_PYTHON="/pyexplroot/home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13" \
+	UV_TOOL_DIR="/pyexplroot/home/tools" \
+	uv --verbose --no-managed-python tool install ruff --force
+
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked

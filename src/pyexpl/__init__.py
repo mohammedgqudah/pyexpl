@@ -30,7 +30,6 @@ def create_app() -> Flask:
 
         return {
             "stdout": result.stdout,
-            "stderr": result.stderr,
             "exit_code": result.returncode,
         }
 

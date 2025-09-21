@@ -1,5 +1,5 @@
-.PHONY: docker-build
-docker-build:
+.PHONY: build docker-export test
+build:
 	sudo docker build -t pyexpl:latest .
 
 docker-export:
@@ -11,4 +11,4 @@ docker-export:
 	tar -xf rootfs.tar -C temp
 
 test:
-	sudo docker run --rm -v ./tests:/app/tests:ro --cgroupns host --privileged -it pyexpl:latest uv run pytest
+	+ sudo docker run --rm -v ./tests:/app/tests:ro --cgroupns host --privileged -it pyexpl:latest uv run pytest

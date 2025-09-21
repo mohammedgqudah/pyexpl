@@ -13,7 +13,6 @@ def nsjail(cmd: list[str]):
 class RunResult(typing.NamedTuple):
     returncode: int
     stdout: str
-    stderr: str
 
 
 class Runner(ABC):
@@ -33,14 +32,32 @@ class PythonRunner(Runner):
         self.version = version
 
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
-        process = subprocess.run(
+        process = subprocess.Popen(
             nsjail(["/usr/bin/env", f"python{self.version}", "-c", input]),
-            capture_output=True,
-            input=input,
             text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
         )
+
+        # TODO: make this configurable
+        MAX = 1000
+        chunk_size = 100
+        stdout = ""
+
+        # We can't wait for the process to finish before reading stdout or else
+        # a jailed process can consume all of the host memory by filling up the stdout buffer. Instead, read
+        # stdout one chunk at a time and terminate nsjail if the the process exceeds the limit.
+        while process.poll() is None:
+            stdout_chunk = process.stdout.read(chunk_size)
+            if len(stdout) + len(stdout_chunk) > MAX:
+                stdout += "\n[Output truncated]"
+                break
+            stdout += stdout_chunk
+
+        process.terminate()
+
         return RunResult(
-            process.returncode, stdout=process.stdout, stderr=process.stderr
+            143 if process.returncode is None else process.returncode, stdout=stdout
         )
 
 
@@ -60,30 +77,33 @@ class MyPyRunner(Runner):
                 ["uvx", "mypy", f.name],
                 capture_output=True,
                 text=True,
+                stderr=subprocess.STDOUT,
             )
-        return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+        return RunResult(0, stdout=process.stdout)
 
 
 class RuffCheckRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
         process = subprocess.run(
-            ["uvx", "ruff", "check", "-"],
-            capture_output=True,
+            nsjail(["/usr/bin/env", "ruff", "check", "-"]),
             input=input,
             text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
         )
-        return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+        return RunResult(0, stdout=process.stdout)
 
 
 class RuffFormatRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
         process = subprocess.run(
-            ["uvx", "ruff", "format", "-"],
-            capture_output=True,
+            nsjail(["/usr/bin/env", "ruff", "format", "-"]),
             input=input,
             text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
         )
-        return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+        return RunResult(0, stdout=process.stdout)
 
 
 class PyRightRunner(Runner):
@@ -96,8 +116,9 @@ class PyRightRunner(Runner):
                 capture_output=True,
                 input=input,
                 text=True,
+                stderr=subprocess.STDOUT,
             )
-        return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+        return RunResult(0, stdout=process.stdout)
 
 
 class PyTypeRunner(Runner):
@@ -111,8 +132,9 @@ class PyTypeRunner(Runner):
                 input=input,
                 text=True,
                 cwd="/",
+                stderr=subprocess.STDOUT,
             )
-        return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+        return RunResult(0, stdout=process.stdout)
 
 
 class PyreRunner(Runner):
@@ -134,8 +156,9 @@ class PyreRunner(Runner):
                 input=input,
                 text=True,
                 cwd="/",
+                stderr=subprocess.STDOUT,
             )
-        return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+        return RunResult(0, stdout=process.stdout)
 
 
 RUNNERS: dict[str, Runner] = {

@@ -101,9 +101,6 @@ function run() {
 			.then((r) => r.json())
 			.then((r) => {
 				output.innerText = r.stdout;
-				if (r.exit_code != 0) {
-					output.innerText += r.stderr;
-				}
 			})
 			.catch((e) => {
 				console.error(e);

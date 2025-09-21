@@ -7,7 +7,7 @@ Quickly test python programs across different versions.
 
 # Running
 ```
-make docker-build
+make build
 docker run --cgroupns host --rm -p 8000:8000 --privileged -it pyexpl:latest
 ```
 
