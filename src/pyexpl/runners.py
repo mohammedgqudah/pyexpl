@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 import subprocess
 import tempfile
 import pathlib
-import re
 
 
 def nsjail(cmd: list[str]):
