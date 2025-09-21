@@ -5,36 +5,35 @@ import tempfile
 import pathlib
 import re
 
+
 def nsjail(cmd: list[str]):
     """Build an nsjail command list with the given arguments."""
-    return [
-        "nsjail",
-        "-C",
-        "/app/nsjail.cfg",
-        "-q",
-        "--",
-        *cmd
-    ]
+    return ["nsjail", "-C", "/app/nsjail.cfg", "-q", "--", *cmd]
+
 
 def parse_nsjail_stderr(stderr: str) -> int:
     pattern = r"\(\[STANDALONE MODE\]\) exited with status: (?P<exit_code>\d{1,3})"
     match = re.finditer(pattern, stderr)
     return int(next(match).group("exit_code"))
 
+
 class RunResult(typing.NamedTuple):
     returncode: int
     stdout: str
     stderr: str
+
 
 class Runner(ABC):
     @abstractmethod
     def run(self, input: str) -> RunResult:
         pass
 
+
 class PythonRunner(Runner):
     """
     Run code via a specific python version.
     """
+
     version: str
 
     def __init__(self, version: str):
@@ -47,7 +46,10 @@ class PythonRunner(Runner):
             input=input,
             text=True,
         )
-        return RunResult(process.returncode, stdout=process.stdout, stderr=process.stderr)
+        return RunResult(
+            process.returncode, stdout=process.stdout, stderr=process.stderr
+        )
+
 
 class MyPyRunner(Runner):
     """
@@ -56,6 +58,7 @@ class MyPyRunner(Runner):
     Note: I need to figure out how to install typing stubs for inline dependencies when a PEP 723
     script is provided, right now mypy will complain about missing stubs and exit.
     """
+
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
         with tempfile.NamedTemporaryFile("w+") as f:
             _ = f.write(input)
@@ -67,6 +70,7 @@ class MyPyRunner(Runner):
             )
         return RunResult(0, stdout=process.stdout, stderr=process.stderr)
 
+
 class RuffCheckRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
         process = subprocess.run(
@@ -77,6 +81,7 @@ class RuffCheckRunner(Runner):
         )
         return RunResult(0, stdout=process.stdout, stderr=process.stderr)
 
+
 class RuffFormatRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
         process = subprocess.run(
@@ -86,6 +91,7 @@ class RuffFormatRunner(Runner):
             text=True,
         )
         return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+
 
 class PyRightRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
@@ -100,6 +106,7 @@ class PyRightRunner(Runner):
             )
         return RunResult(0, stdout=process.stdout, stderr=process.stderr)
 
+
 class PyTypeRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
         with tempfile.NamedTemporaryFile("w+", suffix=".py") as f:
@@ -110,9 +117,10 @@ class PyTypeRunner(Runner):
                 capture_output=True,
                 input=input,
                 text=True,
-                cwd="/"
+                cwd="/",
             )
         return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+
 
 class PyreRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
@@ -121,13 +129,21 @@ class PyreRunner(Runner):
             _ = f.write(input)
             f.flush()
             process = subprocess.run(
-                ["uvx", "--from", "pyre-check", "pyre", "--source-directory", pathlib.Path(f.name).parent],
+                [
+                    "uvx",
+                    "--from",
+                    "pyre-check",
+                    "pyre",
+                    "--source-directory",
+                    pathlib.Path(f.name).parent,
+                ],
                 capture_output=True,
                 input=input,
                 text=True,
-                cwd="/"
+                cwd="/",
             )
         return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+
 
 RUNNERS: dict[str, Runner] = {
     "python3.14": PythonRunner("3.14"),

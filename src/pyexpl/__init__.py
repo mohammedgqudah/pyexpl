@@ -2,13 +2,13 @@ from flask import Flask, render_template, request, abort
 from flask.typing import ResponseReturnValue
 from pyexpl.runners import RUNNERS
 
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
     @app.get("/")
-    def index(): # pyright: ignore[reportUnusedFunction]
+    def index():  # pyright: ignore[reportUnusedFunction]
         return render_template("index.html")
-
 
     @app.post("/run")
     def run() -> ResponseReturnValue:  # pyright: ignore[reportUnusedFunction]
@@ -33,8 +33,9 @@ def create_app() -> Flask:
             "stderr": result.stderr,
             "exit_code": result.returncode,
         }
-    
+
     return app
+
 
 def main():
     create_app().run(port=8000, debug=True, host="0.0.0.0")
