@@ -1,8 +1,8 @@
-var runners = ["python3-13"];
+var runners = ["python3-14"];
 
 // setup split.js
 Split(["#split-0", "#output-split-container"]);
-var output_split = Split(["#output-python3-13"], {
+var output_split = Split(["#output-python3-14"], {
 	direction: "vertical",
 });
 
@@ -75,6 +75,7 @@ print(os.listdir("/"))
 const Vim = ace.require("ace/keyboard/vim").CodeMirror.Vim;
 
 let mapping = {
+	"python3-14": "python3.14",
 	"python3-13": "python3.13",
 	"python3-12": "python3.12",
 	"python3-11": "python3.11",

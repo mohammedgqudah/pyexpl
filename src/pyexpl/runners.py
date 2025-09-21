@@ -3,9 +3,10 @@ from abc import ABC, abstractmethod
 import subprocess
 
 
-def nsjail(cmd: list[str]):
+def nsjail(cmd: list[str], jail_opts: list[str] | None = None):
+    jail_opts = jail_opts or []
     """Build an nsjail command list with the given arguments."""
-    return ["nsjail", "-C", "/app/nsjail.cfg", "-q", "--", *cmd]
+    return ["nsjail", "-C", "/app/nsjail.cfg", *jail_opts, "-q", "--", *cmd]
 
 
 class RunResult(typing.NamedTuple):
@@ -38,7 +39,7 @@ class PythonRunner(Runner):
         )
 
         # TODO: make this configurable
-        MAX = 1000
+        MAX = 10000
         chunk_size = 100
         stdout = ""
 
@@ -75,7 +76,11 @@ class MyPyRunner(Runner):
                     "/home/tools/mypy/bin/mypy",
                     "-c",
                     input,
-                ]
+                ],
+                [
+                    "--cgroup_cpu_ms_per_sec",
+                    "0",
+                ],
             ),
             text=True,
             stdout=subprocess.PIPE,
@@ -123,7 +128,19 @@ class PyRightRunner(Runner):
 class PyTypeRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
         process = subprocess.run(
-            nsjail(["/home/wrapstdin.sh", "/usr/bin/env", "pytype-single"]),
+            nsjail(
+                ["/home/wrapstdin.sh", "/usr/bin/env", "pytype-single"],
+                # pytype doesn't like being in the jail for some reason and will not always work
+                # if I limit cpu time.
+                [
+                    "--cgroup_mem_max",
+                    "0",
+                    "--cgroup_cpu_ms_per_sec",
+                    "0",
+                    "--rlimit_nofile",
+                    "1000",  # not sure why it needs to open lots of files
+                ],
+            ),
             input=input,
             text=True,
             stdout=subprocess.PIPE,
@@ -143,7 +160,12 @@ class PyreRunner(Runner):
                     "pyre",
                     "--noninteractive",
                     "--source-directory",
-                ]
+                ],
+                [
+                    # pyre mmap's 9GB of NORESERVE memory.
+                    "--rlimit_as",
+                    "99999999999999999",
+                ],
             ),
             input=input,
             text=True,

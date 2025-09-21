@@ -34,7 +34,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # install python versions and tools
 RUN --mount=type=cache,target=/root/.cache/uv \
-	uv python install python3.13.7 --install-dir /pyexplroot/home/pythons --no-bin \
+	uv python install python3.14.0rc2 --install-dir /pyexplroot/home/pythons --no-bin \
+	&& uv python install python3.13.7 --install-dir /pyexplroot/home/pythons --no-bin \
 	&& uv python install python3.12.11 --install-dir /pyexplroot/home/pythons --no-bin \
 	&& uv python install python3.11.13 --install-dir /pyexplroot/home/pythons --no-bin \
 	&& uv python install python3.10.18 --install-dir /pyexplroot/home/pythons --no-bin \

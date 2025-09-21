@@ -44,6 +44,7 @@ def test_unknown_runner(client: FlaskClient):
 @pytest.mark.parametrize(
     "version",
     [
+        "3.14",
         "3.13",
         "3.12",
         "3.11",
@@ -119,7 +120,7 @@ while True:
 
     data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
     assert 200 == response.status_code
-    assert data["stdout"] == ("1" * 1000) + "\n[Output truncated]"
+    assert data["stdout"] == ("1" * 10000) + "\n[Output truncated]"
     assert data["exit_code"] == 143
 
 
