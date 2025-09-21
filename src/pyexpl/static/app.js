@@ -26,11 +26,11 @@ function newRunner(runner) {
 
 	const panes = Array.from(container.children).filter(el => !el.classList.contains('gutter'));
 
-	const newDiv = document.createElement('div');
-	newDiv.id = runner_id;
-	newDiv.classList += "output";
-	newDiv.setAttribute('data-runner', runner);
-	container.appendChild(newDiv);
+	const outputPane = document.createElement('div');
+	outputPane.id = runner_id;
+	outputPane.classList += "output";
+	outputPane.setAttribute('data-runner', runner);
+	container.appendChild(outputPane);
 
 	const paneSelectors = Array.from(container.children)
 		.filter(el => !el.classList.contains('gutter'))
@@ -65,11 +65,7 @@ editor.setOptions({
 	copyWithEmptySelection: true,
 });
 editor.setFontSize(18);
-editor.setValue(`# /// script
-# dependencies = [
-# ]
-# ///
-
+editor.setValue(`
 import os, sys
 print(sys.version)
 print(os.listdir("/"))
@@ -104,7 +100,6 @@ function run() {
 		})
 			.then((r) => r.json())
 			.then((r) => {
-				let pre = document.createElement("pre")
 				output.innerText = r.stdout;
 				if (r.exit_code != 0) {
 					output.innerText += r.stderr;
