@@ -11,12 +11,6 @@ def nsjail(cmd: list[str]):
     return ["nsjail", "-C", "/app/nsjail.cfg", "-q", "--", *cmd]
 
 
-def parse_nsjail_stderr(stderr: str) -> int:
-    pattern = r"\(\[STANDALONE MODE\]\) exited with status: (?P<exit_code>\d{1,3})"
-    match = re.finditer(pattern, stderr)
-    return int(next(match).group("exit_code"))
-
-
 class RunResult(typing.NamedTuple):
     returncode: int
     stdout: str

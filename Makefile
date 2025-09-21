@@ -11,4 +11,4 @@ docker-export:
 	tar -xf rootfs.tar -C temp
 
 test:
-	sudo docker run -v ./tests:/app/tests:ro --cgroupns host --privileged -it pyexpl:latest uv run pytest
+	sudo docker run --rm -v ./tests:/app/tests:ro --cgroupns host --privileged -it pyexpl:latest uv run pytest
