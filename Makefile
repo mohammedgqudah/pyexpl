@@ -9,3 +9,6 @@ docker-export:
 	sudo docker create --name temp_pyexpl pyexpl:latest
 	sudo docker export temp_pyexpl > rootfs.tar
 	tar -xf rootfs.tar -C temp
+
+test:
+	sudo docker run -v ./tests:/app/tests:ro --cgroupns host --privileged -it pyexpl:latest uv run pytest

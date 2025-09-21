@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import subprocess
 import tempfile
 import pathlib
+import re
 
 def nsjail(cmd: list[str]):
     """Build an nsjail command list with the given arguments."""
@@ -10,9 +11,15 @@ def nsjail(cmd: list[str]):
         "nsjail",
         "-C",
         "/app/nsjail.cfg",
+        "-q",
         "--",
         *cmd
     ]
+
+def parse_nsjail_stderr(stderr: str) -> int:
+    pattern = r"\(\[STANDALONE MODE\]\) exited with status: (?P<exit_code>\d{1,3})"
+    match = re.finditer(pattern, stderr)
+    return int(next(match).group("exit_code"))
 
 class RunResult(typing.NamedTuple):
     returncode: int
@@ -40,7 +47,7 @@ class PythonRunner(Runner):
             input=input,
             text=True,
         )
-        return RunResult(0, stdout=process.stdout, stderr=process.stderr)
+        return RunResult(process.returncode, stdout=process.stdout, stderr=process.stderr)
 
 class MyPyRunner(Runner):
     """

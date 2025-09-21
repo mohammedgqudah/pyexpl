@@ -1,3 +1,4 @@
+from typing import Any
 from pyexpl import create_app
 from flask import Flask
 from flask.testing import FlaskClient, FlaskCliRunner
@@ -55,31 +56,38 @@ print("version:", sys.version)
         """.strip(),
         "runner": f"python{version}"
     })
-    assert 200 == response.status_code
-    assert response.json is not None
-    assert f"version: {version}" in response.json["stdout"]
 
-def test_timeout(client: FlaskClient):
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    assert 200 == response.status_code
+    assert f"version: {version}" in data["stdout"]
+    assert 0 == data["exit_code"]
+    assert data["stderr"] == ""
+
+def test_syntax_error(client: FlaskClient):
     response = client.post("/run", data={
         "code": """
-import time
-time.sleep(2)
-print("--pyexpl--")
+print("hello
         """.strip(),
         "runner": f"python3.13"
     })
-    assert 200 == response.status_code
-    assert response.json is not None
-    assert f"--pyexpl--" in response.json["stdout"]
 
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    assert 200 == response.status_code
+    assert "SyntaxError: unterminated string literal" in data["stderr"]
+    assert data["stdout"] == ""
+    assert data['exit_code'] != 0
+
+def test_print_to_stderr(client: FlaskClient):
     response = client.post("/run", data={
         "code": """
-import time
-time.sleep(10)
-print("--pyexpl--")
+import sys
+print("printing to stderr", file=sys.stderr)
         """.strip(),
         "runner": f"python3.13"
     })
+
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
     assert 200 == response.status_code
-    assert response.json is not None
-    assert f"--pyexpl--" in response.json["stdout"]
+    assert "printing to stderr" in data["stderr"]  
+    assert data["stdout"] == ""
+    assert data['exit_code'] == 0
