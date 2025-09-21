@@ -11,4 +11,7 @@ docker-export:
 	tar -xf rootfs.tar -C temp
 
 test:
-	+ sudo docker run --rm -v ./tests:/app/tests:ro --cgroupns host --privileged -it pyexpl:latest uv run pytest
+	+ sudo docker run --rm -v ./tests:/app/tests:ro -v ./src:/app/src:ro --cgroupns host --privileged -it pyexpl:latest uv run pytest
+
+jail_sh:
+	sudo docker run --rm -v ./tests:/app/tests:ro --cgroupns host --privileged -it pyexpl:latest /usr/bin/env nsjail -C nsjail.cfg --time_limit 0 -- /bin/bash

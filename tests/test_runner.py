@@ -172,3 +172,91 @@ print  (  1    +  1)
     assert 200 == response.status_code
     assert data["stdout"] == expected_output
     assert data["exit_code"] == 0
+
+
+def test_mypy(client: FlaskClient):
+    expected_output = """<string>:2: error: Incompatible return value type (got "str", expected "int")  [return-value]
+Found 1 error in 1 file (checked 1 source file)
+"""
+
+    response = client.post(
+        "/run",
+        data={
+            "code": """
+def add(a: int, b: int) -> int:
+    return "lol" 
+""".strip(),
+            "runner": "mypy",
+        },
+    )
+
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    assert 200 == response.status_code
+    assert data["stdout"] == expected_output
+    assert data["exit_code"] == 0
+
+
+def test_pyright(client: FlaskClient):
+    response = client.post(
+        "/run",
+        data={
+            "code": """
+def add(a: int, b: int) -> int:
+    return "lol" 
+""".strip(),
+            "runner": "pyright",
+        },
+    )
+
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    assert 200 == response.status_code
+    assert (
+        'error: Type "Literal[\'lol\']" is not assignable to return type "int"'
+        in data["stdout"]
+    )
+    assert (
+        '"Literal[\'lol\']" is not assignable to "int" (reportReturnType)'
+        in data["stdout"]
+    )
+    assert data["exit_code"] == 0
+
+
+def test_pyre(client: FlaskClient):
+    response = client.post(
+        "/run",
+        data={
+            "code": """
+def add(a: int, b: int) -> int:
+    return "lol" 
+""".strip(),
+            "runner": "pyre",
+        },
+    )
+
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    assert 200 == response.status_code
+    assert (
+        "Incompatible return type [7]: Expected `int` but got `str`" in data["stdout"]
+    )
+    assert data["exit_code"] == 0
+
+
+def test_pytype(client: FlaskClient):
+    response = client.post(
+        "/run",
+        data={
+            "code": """
+import os, sys
+def add(a: int, b: int) -> int:
+    return "lol" 
+""".strip(),
+            "runner": "pytype",
+        },
+    )
+
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    assert 200 == response.status_code
+    assert "in add: bad return type [bad-return-type]" in data["stdout"]
+    assert "Expected: int" in data["stdout"]
+    assert "Actually returned: str" in data["stdout"]
+    assert data["exit_code"] == 0

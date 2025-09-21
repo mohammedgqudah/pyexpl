@@ -56,17 +56,18 @@ document.querySelectorAll(".add-runner").forEach(button => {
 // setup the code editor
 let editor = ace.edit("editor");
 ace.edit(editor, {
-	mode: "ace/mode/python",
 	selectionStyle: "text",
 });
+editor.setTheme("ace/theme/tomorrow_night"); // use the theme
+editor.session.setMode("ace/mode/python"); // optional
 ace.require("ace/keybindings/vim");
 editor.setKeyboardHandler("ace/keyboard/vim");
 editor.setOptions({
 	copyWithEmptySelection: true,
 });
+editor.setShowPrintMargin(false);
 editor.setFontSize(18);
-editor.setValue(`
-import os, sys
+editor.setValue(`import os, sys
 print(sys.version)
 print(os.listdir("/"))
 `);

@@ -1,8 +1,6 @@
 import typing
 from abc import ABC, abstractmethod
 import subprocess
-import tempfile
-import pathlib
 
 
 def nsjail(cmd: list[str]):
@@ -70,15 +68,19 @@ class MyPyRunner(Runner):
     """
 
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
-        with tempfile.NamedTemporaryFile("w+") as f:
-            _ = f.write(input)
-            f.flush()
-            process = subprocess.run(
-                ["uvx", "mypy", f.name],
-                capture_output=True,
-                text=True,
-                stderr=subprocess.STDOUT,
-            )
+        process = subprocess.run(
+            nsjail(
+                [
+                    "/home/tools/mypy/bin/python",
+                    "/home/tools/mypy/bin/mypy",
+                    "-c",
+                    input,
+                ]
+            ),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
         return RunResult(0, stdout=process.stdout)
 
 
@@ -108,56 +110,46 @@ class RuffFormatRunner(Runner):
 
 class PyRightRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
-        with tempfile.NamedTemporaryFile("w+") as f:
-            _ = f.write(input)
-            f.flush()
-            process = subprocess.run(
-                ["uvx", "pyright", f.name],
-                capture_output=True,
-                input=input,
-                text=True,
-                stderr=subprocess.STDOUT,
-            )
+        process = subprocess.run(
+            nsjail(["/home/wrapstdin.sh", "/usr/bin/env", "pyright"]),
+            input=input,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
         return RunResult(0, stdout=process.stdout)
 
 
 class PyTypeRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
-        with tempfile.NamedTemporaryFile("w+", suffix=".py") as f:
-            _ = f.write(input)
-            f.flush()
-            process = subprocess.run(
-                ["uvx", "--python", "python3.11", "pytype", f.name],
-                capture_output=True,
-                input=input,
-                text=True,
-                cwd="/",
-                stderr=subprocess.STDOUT,
-            )
+        process = subprocess.run(
+            nsjail(["/home/wrapstdin.sh", "/usr/bin/env", "pytype-single"]),
+            input=input,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
         return RunResult(0, stdout=process.stdout)
 
 
 class PyreRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
-        tmpdir = tempfile.mkdtemp()
-        with tempfile.NamedTemporaryFile("w+", dir=tmpdir, suffix=".py") as f:
-            _ = f.write(input)
-            f.flush()
-            process = subprocess.run(
+        process = subprocess.run(
+            nsjail(
                 [
-                    "uvx",
-                    "--from",
-                    "pyre-check",
+                    "/home/wrapstdin.sh",
+                    "-d",
+                    "/usr/bin/env",
                     "pyre",
+                    "--noninteractive",
                     "--source-directory",
-                    pathlib.Path(f.name).parent,
-                ],
-                capture_output=True,
-                input=input,
-                text=True,
-                cwd="/",
-                stderr=subprocess.STDOUT,
-            )
+                ]
+            ),
+            input=input,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
         return RunResult(0, stdout=process.stdout)
 
 

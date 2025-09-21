@@ -17,7 +17,7 @@ RUN git clone -b master --single-branch https://github.com/google/nsjail.git . \
 RUN make
 
 # final layer -------------------------------
-FROM debian:bookworm-slim
+FROM buildpack-deps:bookworm
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
@@ -45,7 +45,66 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 RUN --mount=type=cache,target=/root/.cache/uv \
 	UV_PYTHON="/pyexplroot/home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13" \
 	UV_TOOL_DIR="/pyexplroot/home/tools" \
-	uv --verbose --no-managed-python tool install ruff --force
+	uv --no-managed-python tool install ruff --force
+
+# install mypy
+RUN --mount=type=cache,target=/root/.cache/uv \
+	UV_PYTHON="" \
+	UV_TOOL_DIR="/pyexplroot/home/tools" \
+	uv --no-managed-python tool install mypy --force
+
+# install pyright
+RUN --mount=type=cache,target=/root/.cache/uv \
+	UV_PYTHON="/pyexplroot/home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13" \
+	UV_TOOL_DIR="/pyexplroot/home/tools" \
+	uv --no-managed-python tool install pyright[nodejs] --force
+
+# install pytype
+RUN --mount=type=cache,target=/root/.cache/uv \
+	UV_PYTHON="/pyexplroot/home/pythons/cpython-3.12.11-linux-x86_64-gnu/bin/python3.12" \
+	UV_TOOL_DIR="/pyexplroot/home/tools" \
+	uv --no-managed-python tool install pytype --force
+
+# install pyre
+RUN --mount=type=cache,target=/root/.cache/uv \
+	UV_PYTHON="/pyexplroot/home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13" \
+	UV_TOOL_DIR="/pyexplroot/home/tools" \
+	uv --no-managed-python tool install pyre-check --force
+
+# adjust PYRE
+# change pyvenv.cfg:home to work inside the jail
+RUN sed -i 's|^home = .*|home = /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin|' /pyexplroot/home/tools/pyre-check/pyvenv.cfg
+# update symlinks
+RUN cd /pyexplroot/home/tools/pyre-check/bin/ && rm -f python3 python3.13 python
+RUN ln -s /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13 /pyexplroot/home/tools/pyre-check/bin/python3.13
+RUN ln -s /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13 /pyexplroot/home/tools/pyre-check/bin/python3
+RUN ln -s /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13 /pyexplroot/home/tools/pyre-check/bin/python
+# update shebang
+RUN sed -i '1s|.*|#!/home/tools/pyre-check/bin/python|' /pyexplroot/home/tools/pyre-check/bin/pyre
+
+# adjust pyright
+# change pyvenv.cfg:home to work inside the jail
+RUN sed -i 's|^home = .*|home = /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin|' /pyexplroot/home/tools/pyright/pyvenv.cfg
+# update symlinks
+RUN cd /pyexplroot/home/tools/pyright/bin/ && rm -f python3 python3.13 python
+RUN ln -s /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13 /pyexplroot/home/tools/pyright/bin/python3.13
+RUN ln -s /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13 /pyexplroot/home/tools/pyright/bin/python3
+RUN ln -s /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13 /pyexplroot/home/tools/pyright/bin/python
+# update shebang
+RUN sed -i '1s|.*|#!/home/tools/pyright/bin/python|' /pyexplroot/home/tools/pyright/bin/pyright
+
+
+# adjust pytype
+# change pyvenv.cfg:home to work inside the jail
+RUN sed -i 's|^home = .*|home = /home/pythons/cpython-3.12.11-linux-x86_64-gnu/bin|' /pyexplroot/home/tools/pytype/pyvenv.cfg
+# update symlinks
+RUN cd /pyexplroot/home/tools/pytype/bin/ && rm -f python3 python3.12 python
+RUN ln -s /home/pythons/cpython-3.12.11-linux-x86_64-gnu/bin/python3.12 /pyexplroot/home/tools/pytype/bin/python3.12
+RUN ln -s /home/pythons/cpython-3.12.11-linux-x86_64-gnu/bin/python3.12 /pyexplroot/home/tools/pytype/bin/python3
+RUN ln -s /home/pythons/cpython-3.12.11-linux-x86_64-gnu/bin/python3.12 /pyexplroot/home/tools/pytype/bin/python
+# update shebang
+RUN sed -i '1s|.*|#!/home/tools/pytype/bin/python|' /pyexplroot/home/tools/pytype/bin/pytype
+RUN sed -i '1s|.*|#!/home/tools/pytype/bin/python|' /pyexplroot/home/tools/pytype/bin/pytype-single
 
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -59,6 +118,10 @@ COPY --link --from=nsjail /lib/x86_64-linux-gnu/libnl-route-3.so.200 /lib/x86_64
 COPY --link --from=nsjail /lib/x86_64-linux-gnu/libnl-3.so.200 /lib/x86_64-linux-gnu/libnl-3.so.200
 #COPY --link --from=builder /lib/x86_64-linux-gnu/libz.so.1 /lib/x86_64-linux-gnu/
 
+COPY jail_entrypoint.sh /pyexplroot/home/
+COPY wrapstdin.sh /pyexplroot/home/
+RUN chmod +x /pyexplroot/home/jail_entrypoint.sh
+RUN chmod +x /pyexplroot/home/wrapstdin.sh
 
 WORKDIR /app
 CMD ["uv", "run", "pyexpl"]
