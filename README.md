@@ -3,7 +3,8 @@ Quickly test python programs across different versions.
 
 > Still under development and it's not safe to run arbitrary code yet.
 
-<img width="3511" height="2071" alt="image" src="https://github.com/user-attachments/assets/3efc3bc0-ea4b-47b9-81d0-0344df7dff1e" />
+
+<img width="3408" height="2083" alt="image" src="https://github.com/user-attachments/assets/ba2f2b13-fa40-4d58-8023-0a4997052932" />
 
 # Running
 ```
