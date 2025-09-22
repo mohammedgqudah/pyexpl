@@ -116,7 +116,15 @@ class RuffFormatRunner(Runner):
 class PyRightRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
         process = subprocess.run(
-            nsjail(["/home/wrapstdin.sh", "/usr/bin/env", "pyright"]),
+            nsjail(
+                [
+                    "/home/wrapstdin.sh",
+                    "/usr/bin/env",
+                    "pyright",
+                    "--pythonversion",
+                    "3.13",
+                ]
+            ),
             input=input,
             text=True,
             stdout=subprocess.PIPE,
@@ -129,7 +137,15 @@ class PyTypeRunner(Runner):
     def run(self, input: str) -> RunResult:  # pyright: ignore[reportImplicitOverride]
         process = subprocess.run(
             nsjail(
-                ["/home/wrapstdin.sh", "/usr/bin/env", "pytype-single"],
+                # pytype doesn't support python > 3.12
+                [
+                    "/home/wrapstdin.sh",
+                    "/usr/bin/env",
+                    "pytype-single",
+                    "--python_version",
+                    "3.12",
+                    "--",
+                ],
                 # pytype doesn't like being in the jail for some reason and will not always work
                 # if I limit cpu time.
                 [

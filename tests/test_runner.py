@@ -191,9 +191,33 @@ def add(a: int, b: int) -> int:
         },
     )
 
-    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType, reportRedeclaration]
     assert 200 == response.status_code
     assert data["stdout"] == expected_output
+    assert data["exit_code"] == 0
+
+    response = client.post(
+        "/run",
+        data={
+            "code": """
+from dataclasses import dataclass
+from typing import reveal_type
+
+type Either[L, R] = Left[L] | Right[R]
+@dataclass
+class Left[L]:
+    l: L
+@dataclass
+class Right[R]:
+    r: R
+""".strip(),
+            "runner": "mypy",
+        },
+    )
+
+    data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
+    assert 200 == response.status_code
+    assert "Success: no issues found in 1 source file" in data["stdout"]
     assert data["exit_code"] == 0
 
 

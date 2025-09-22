@@ -41,7 +41,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 	&& uv python install python3.10.18 --install-dir /pyexplroot/home/pythons --no-bin \
 	&& uv python install python3.9.23 --install-dir /pyexplroot/home/pythons --no-bin \
 	&& uv python install python3.8.20 --install-dir /pyexplroot/home/pythons --no-bin
-
 # install ruff
 RUN --mount=type=cache,target=/root/.cache/uv \
 	UV_PYTHON="/pyexplroot/home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13" \
@@ -50,7 +49,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # install mypy
 RUN --mount=type=cache,target=/root/.cache/uv \
-	UV_PYTHON="" \
+	UV_PYTHON="/pyexplroot/home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13" \
 	UV_TOOL_DIR="/pyexplroot/home/tools" \
 	uv --no-managed-python tool install mypy --force
 
@@ -71,6 +70,26 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 	UV_PYTHON="/pyexplroot/home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13" \
 	UV_TOOL_DIR="/pyexplroot/home/tools" \
 	uv --no-managed-python tool install pyre-check --force
+
+# create symlinks that will work inside the jail
+RUN ln -s -f /home/pythons/cpython-3.14.0rc2-linux-x86_64-gnu/bin/python3.14 /usr/bin/python3.14
+RUN ln -s -f /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13 /usr/bin/python3.13
+RUN ln -s -f /home/pythons/cpython-3.12.11-linux-x86_64-gnu/bin/python3.12 /usr/bin/python3.12
+RUN ln -s -f /home/pythons/cpython-3.11.13-linux-x86_64-gnu/bin/python3.11 /usr/bin/python3.11
+RUN ln -s -f /home/pythons/cpython-3.10.18-linux-x86_64-gnu/bin/python3.10 /usr/bin/python3.10
+RUN ln -s -f /home/pythons/cpython-3.9.23-linux-x86_64-gnu/bin/python3.9 /usr/bin/python3.9
+RUN ln -s -f /home/pythons/cpython-3.8.20-linux-x86_64-gnu/bin/python3.8 /usr/bin/python3.8
+
+# adjust mypy
+# change pyvenv.cfg:home to work inside the jail
+RUN sed -i 's|^home = .*|home = /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin|' /pyexplroot/home/tools/mypy/pyvenv.cfg
+# update symlinks
+RUN cd /pyexplroot/home/tools/mypy/bin/ && rm -f python3 python3.13 python
+RUN ln -s /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13 /pyexplroot/home/tools/mypy/bin/python3.13
+RUN ln -s /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13 /pyexplroot/home/tools/mypy/bin/python3
+RUN ln -s /home/pythons/cpython-3.13.7-linux-x86_64-gnu/bin/python3.13 /pyexplroot/home/tools/mypy/bin/python
+# update shebang
+RUN sed -i '1s|.*|#!/home/tools/mypy/bin/python|' /pyexplroot/home/tools/mypy/bin/mypy
 
 # adjust PYRE
 # change pyvenv.cfg:home to work inside the jail
@@ -123,6 +142,7 @@ COPY jail_entrypoint.sh /pyexplroot/home/
 COPY wrapstdin.sh /pyexplroot/home/
 RUN chmod +x /pyexplroot/home/jail_entrypoint.sh
 RUN chmod +x /pyexplroot/home/wrapstdin.sh
+
 
 WORKDIR /app
 CMD ["uv", "run", "pyexpl"]
