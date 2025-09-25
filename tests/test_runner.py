@@ -44,13 +44,13 @@ def test_unknown_runner(client: FlaskClient):
 @pytest.mark.parametrize(
     "version",
     [
-        "3.14",
-        "3.13",
-        "3.12",
-        "3.11",
-        "3.10",
-        "3.9",
-        "3.8",
+        "3-14",
+        "3-13",
+        "3-12",
+        "3-11",
+        "3-10",
+        "3-9",
+        "3-8",
     ],
 )
 def test_python_versions(client: FlaskClient, version: str):
@@ -67,7 +67,7 @@ print("version:", sys.version)
 
     data: dict[str, str] = response.json  # pyright: ignore[reportAssignmentType]
     assert 200 == response.status_code
-    assert f"version: {version}" in data["stdout"]
+    assert f"version: {version.replace('-', '.')}" in data["stdout"]
     assert 0 == data["exit_code"]
 
 
@@ -78,7 +78,7 @@ def test_syntax_error(client: FlaskClient):
             "code": """
 print("hello
         """.strip(),
-            "runner": "python3.13",
+            "runner": "python3-13",
         },
     )
 
@@ -96,7 +96,7 @@ def test_print_to_stderr(client: FlaskClient):
 import sys
 print("printing to stderr", file=sys.stderr)
         """.strip(),
-            "runner": "python3.13",
+            "runner": "python3-13",
         },
     )
 
@@ -114,7 +114,7 @@ def test_stdout_max_limit(client: FlaskClient):
 while True:
     print("1" * 200, end="", flush=True)
         """.strip(),
-            "runner": "python3.13",
+            "runner": "python3-13",
         },
     )
 

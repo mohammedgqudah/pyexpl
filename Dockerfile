@@ -142,7 +142,7 @@ COPY jail_entrypoint.sh /pyexplroot/home/
 COPY wrapstdin.sh /pyexplroot/home/
 RUN chmod +x /pyexplroot/home/jail_entrypoint.sh
 RUN chmod +x /pyexplroot/home/wrapstdin.sh
-
+VOLUME ["/var/lib/pyexpl"]
 
 WORKDIR /app
-CMD ["uv", "run", "pyexpl"]
+CMD ["uv", "run", "gunicorn", "-w",  "4", "-b", "0.0.0.0", "pyexpl:create_app()"]

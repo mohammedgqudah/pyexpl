@@ -24,13 +24,22 @@
 							stroke="#1C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 					</svg>
 				</button>
-				<button class="add-runner" data-runner="python3.14">3.14</button>
-				<button class="add-runner" data-runner="python3.13">3.13</button>
-				<button class="add-runner" data-runner="python3.12">3.12</button>
-				<button class="add-runner" data-runner="python3.11">3.11</button>
-				<button class="add-runner" data-runner="python3.10">3.10</button>
-				<button class="add-runner" data-runner="python3.9">3.9</button>
-				<button class="add-runner" data-runner="python3.8">3.8</button>
+				<!-- share -->
+				<button title="Share" id="share-btn">
+					<svg width="22px" height="22px" viewBox="0 0 24 24" fill="none"
+						xmlns="http://www.w3.org/2000/svg">
+						<path
+							d="M4 13L4 18C4 19.1046 4.89543 20 6 20M20 13V18C20 19.1046 19.1046 20 18 20H10M16 7L12 3L12 15M8 7L9 6"
+							stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</button>
+				<button class="add-runner" data-runner="python3-14">3.14</button>
+				<button class="add-runner" data-runner="python3-13">3.13</button>
+				<button class="add-runner" data-runner="python3-12">3.12</button>
+				<button class="add-runner" data-runner="python3-11">3.11</button>
+				<button class="add-runner" data-runner="python3-10">3.10</button>
+				<button class="add-runner" data-runner="python3-9">3.9</button>
+				<button class="add-runner" data-runner="python3-8">3.8</button>
 				<button class="add-runner" data-runner="ruff-check">ruff</button>
 				<button class="add-runner" data-runner="ruff-format">ruff fmt</button>
 				<button class="add-runner" data-runner="mypy">mypy</button>
@@ -44,6 +53,15 @@
 		</div>
 	</div>
 
+	<script>
+		{% if share_id %}
+		window.share = {
+			"id": {{share_id | tojson}},
+			"runners": {{runners | tojson}},
+			"code": {{code | tojson}},
+			}
+		{% endif %}
+	</script>
 	<script src="/static/app.js">
 	</script>
 	<style>
@@ -79,11 +97,13 @@
 				border-radius: 4px;
 				pointer-events: none;
 			}
+
 			.close-btn {
 				position: absolute;
 				top: 10px;
 				right: 15px;
 			}
+
 			pre {
 				margin: 0;
 				padding: 0;

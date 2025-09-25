@@ -192,13 +192,13 @@ class PyreRunner(Runner):
 
 
 RUNNERS: dict[str, Runner] = {
-    "python3.14": PythonRunner("3.14"),
-    "python3.13": PythonRunner("3.13"),
-    "python3.12": PythonRunner("3.12"),
-    "python3.11": PythonRunner("3.11"),
-    "python3.10": PythonRunner("3.10"),
-    "python3.9": PythonRunner("3.9"),
-    "python3.8": PythonRunner("3.8"),
+    "python3-14": PythonRunner("3.14"),
+    "python3-13": PythonRunner("3.13"),
+    "python3-12": PythonRunner("3.12"),
+    "python3-11": PythonRunner("3.11"),
+    "python3-10": PythonRunner("3.10"),
+    "python3-9": PythonRunner("3.9"),
+    "python3-8": PythonRunner("3.8"),
     "mypy": MyPyRunner(),
     "ruff-format": RuffFormatRunner(),
     "ruff-check": RuffCheckRunner(),
